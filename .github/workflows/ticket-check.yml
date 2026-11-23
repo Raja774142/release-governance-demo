@@ -1,0 +1,23 @@
+name: Governance - Ticket Linkage Check
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-ticket-id:
+    name: Verify Jira/ServiceNow Ticket ID
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR Title & Branch for Ticket Key
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prTitle = context.payload.pull_request.title;
+            const branchName = context.payload.pull_request.head.ref;
+            const ticketRegex = /([A-Z]{2,10}-\d+|(CHG|INC|STRY|TASK)\d{7})/;
+
+            if (!ticketRegex.test(prTitle) && !ticketRegex.test(branchName)) {
+              core.setFailed('Governance Violation: PR title or branch must include a Jira (PROJ-123) or ServiceNow (CHG0012345) ID.');
+            } else {
+              core.info('Valid ticket reference verified.');
+            }
