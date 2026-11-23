@@ -1,0 +1,31 @@
+name: Build & Controlled Release Promotion
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-attest:
+    name: Build Immutable Artifact
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ github.ref_name }}-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Built immutable artifact ${{ github.ref_name }}-${{ github.sha }}"
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-attest
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - run: echo "Deploying ${{ needs.build-and-attest.outputs.image_tag }} to Staging"
+
+  deploy-production:
+    name: Promote to Production
+    needs: [build-and-attest, deploy-staging]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - run: echo "Promoting ${{ needs.build-and-attest.outputs.image_tag }} to Production"
